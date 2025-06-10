@@ -12,7 +12,7 @@ void initBluetoothPeriph(void);
 
 void app_main(void)
 {
-    vTaskSuspendAll();  // 暂停任务调度
+    // vTaskSuspendAll();  // 暂停任务调度
 
     /*---------- 外设初始化 ----------*/
     initSpifsPeriph();
@@ -28,7 +28,7 @@ void app_main(void)
     createBluetoothTask();
     createWifiTask();
 
-    xTaskResumeAll();   // 恢复任务调度
+    // xTaskResumeAll();   // 恢复任务调度
 }
 
 /// @brief 初始化SPIFFS外设
