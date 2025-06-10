@@ -1,0 +1,23 @@
+{
+  "C_Cpp.intelliSenseEngine": "default",
+  "idf.espIdfPathWin": "D:\\Software\\esp-idf\\v5.4.1\\esp-idf",
+  "idf.pythonInstallPath": "D:\\Software\\esp-idf\\.espressif\\tools\\idf-python\\3.11.2\\python.exe",
+  "idf.openOcdConfigs": [
+    "board/esp32-wrover-kit-3.3v.cfg"
+  ],
+  "idf.portWin": "COM5",
+  "idf.toolsPathWin": "D:\\Software\\esp-idf\\.espressif",
+  "idf.customExtraVars": {
+    "IDF_TARGET": "esp32"
+},
+"idf.flashType": "UART",
+"files.associations": {
+    "task_files.h": "c",
+    "task_bluetooth.h": "c",
+    "task_config.h": "c",
+    "task.h": "c",
+    "task_test.h": "c",
+    "compare": "c",
+    "cstdint": "c"
+}
+}
