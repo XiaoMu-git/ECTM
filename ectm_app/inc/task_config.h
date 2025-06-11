@@ -4,12 +4,16 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#define TASK_STACK_SMALL    (uint16_t)(1024 / 4)
-#define TASK_STACK_MEDIUM   (uint16_t)(2048 / 4)
-#define TASK_STACK_LARGE    (uint16_t)(4096 / 4)
+// 栈大小等级（单位：字节）
+#define TASK_STACK_TINY       ((uint16_t)2048)
+#define TASK_STACK_SMALL      ((uint16_t)4096)
+#define TASK_STACK_MEDIUM     ((uint16_t)6144)
+#define TASK_STACK_LARGE      ((uint16_t)8192)
 
-#define TASK_PRIO_LOW       (uint8_t)(5)
-#define TASK_PRIO_MEDIUM    (uint8_t)(10)
-#define TASK_PRIO_HIGH      (uint8_t)(15)
+// 优先级等级
+#define TASK_PRIO_LOW         ((uint8_t)5)
+#define TASK_PRIO_NORMAL      ((uint8_t)10)
+#define TASK_PRIO_HIGH        ((uint8_t)15)
+#define TASK_PRIO_CRITICAL    ((uint8_t)20)
 
 #endif // !_TASK_CONFIG_H_
