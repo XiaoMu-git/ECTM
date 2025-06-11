@@ -3,8 +3,8 @@
 
 #include "task_config.h"
 
-typedef struct TestHandle {
-    TaskHandle_t htask;  // 任务句柄
+typedef struct {
+    TaskHandle_t htask;     // 任务句柄
 } TestHandle;
 
 void createTestTask(void);

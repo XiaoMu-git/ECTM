@@ -19,6 +19,8 @@
     "task_test.h": "c",
     "compare": "c",
     "cstdint": "c",
-    "task_console.h": "c"
+    "task_console.h": "c",
+    "task_wifi.h": "c",
+    "esp_log.h": "c"
 }
 }
