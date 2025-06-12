@@ -141,11 +141,27 @@ cJSON* getJsonObject(cJSON *father, char **keys, uint8_t layer, char *value) {
 void filesCoreTask(void* param) {
     const char *TAG = pcTaskGetName(NULL);
     FilesHandle* hfiles = (FilesHandle*)param;
-    FilesMsg files_msg;
+    FilesMsg req_msg, resp_msg;
 
     while (1) {
-        if (xQueueReceive(hfiles->req_queue, &files_msg, portMAX_DELAY) == pdTRUE) {
-            
+        if (xQueueReceive(hfiles->req_queue, &req_msg, portMAX_DELAY) == pdTRUE) {
+            // 读取对应的 json 文件
+            cJSON *root = NULL;
+            writeJsonRoot(req_msg.path, root);
+
+            // 处理不同的操作
+            if (req_msg.mode == FILES_MODE_READ) {
+                // 读取
+
+                // 回复
+
+            }
+            else if (req_msg.mode == FILES_MODE_WRITE) {
+                // 修改
+
+                // 保存
+
+            }
         }
     }
 }
