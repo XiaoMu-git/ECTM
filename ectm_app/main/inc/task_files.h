@@ -32,6 +32,7 @@ typedef struct {
     uint8_t type;                                   // 区分对象和数组
     FilesMode mode;                                 // 操作模式：读或写
     QueueHandle_t resp_queue;                       // 操作完成后返回结果的队列
+    uint8_t resualt;                                // 操作结果：1 成功，0 失败
 } FilesMsg;
 
 void createFilesTask(void);

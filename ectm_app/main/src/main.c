@@ -5,8 +5,8 @@
 #include <dirent.h>
 
 #include "task_test.h"
-#include "task_console.h"
 #include "task_files.h"
+#include "task_console.h"
 #include "task_uart.h"
 #include "task_bluetooth.h"
 #include "task_wifi.h"
@@ -28,8 +28,8 @@ void app_main(void)
     /*---------- 创建任务 ----------*/
     vTaskSuspendAll();  // 暂停任务调度
     createTestTask();
-    createConsoleTask();
     createFilesTask();
+    createConsoleTask();
     createUartTask();
     createBluetoothTask();
     createWifiTask();
@@ -80,7 +80,7 @@ void initSpifsPeriph(void)
     char path[32];
 
     strcpy(path, "/spiffs/setting.json");
-    if (stat(path, &st) == 0) ESP_LOGI(TAG, "found setting.json (size: %ld bytes)", st.st_size);
+    if (stat(path, &st) == 0) ESP_LOGI(TAG, "found %s (size: %ld bytes)", path, st.st_size);
     else {
         ESP_LOGI(TAG, "%s not found, create new file", path);
         FILE *fp = fopen(path, "w");
@@ -93,7 +93,7 @@ void initSpifsPeriph(void)
     }
 
     strcpy(path, "/spiffs/data.json");
-    if (stat(path, &st) == 0) ESP_LOGI(TAG, "found setting.json (size: %ld bytes)", st.st_size);
+    if (stat(path, &st) == 0) ESP_LOGI(TAG, "found %s (size: %ld bytes)", path, st.st_size);
     else {
         ESP_LOGI(TAG, "%s not found, create new file", path);
         FILE *fp = fopen(path, "w");
@@ -106,7 +106,7 @@ void initSpifsPeriph(void)
     }
 
     strcpy(path, "/spiffs/test.json");
-    if (stat(path, &st) == 0) ESP_LOGI(TAG, "found setting.json (size: %ld bytes)", st.st_size);
+    if (stat(path, &st) == 0) ESP_LOGI(TAG, "found %s (size: %ld bytes)", path, st.st_size);
     else {
         ESP_LOGI(TAG, "%s not found, create new file", path);
         FILE *fp = fopen(path, "w");
