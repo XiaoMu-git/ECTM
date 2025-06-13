@@ -13,8 +13,6 @@ FilesHandle hfiles;
 bool readJsonRoot(const char *path, cJSON **root)
 {
     const char *TAG = "readJsonRoot";
-    
-    // 参数有效性检查
     if (path == NULL || root == NULL) {
         ESP_LOGE(TAG, "invalid parameters");
         return false;
@@ -67,8 +65,6 @@ bool readJsonRoot(const char *path, cJSON **root)
 bool writeJsonRoot(const char *path, cJSON *root)
 {
     const char *TAG = "writeJsonRoot";
-
-    // 参数有效性检查
     if (path == NULL|| root == NULL) {
         ESP_LOGE(TAG, "invalid parameters");
         return false;
@@ -103,37 +99,42 @@ bool writeJsonRoot(const char *path, cJSON *root)
 /// @param layer     层数
 /// @param value     不为 NULL 时设置最深层 key 的字符串值，NULL 时不修改，只返回对象
 /// @return          返回最深层 cJSON 对象（或字符串节点），失败返回 NULL
-cJSON* getJsonObject(cJSON *father, char **keys, uint8_t layer, char *value) {
+cJSON* getJsonObject(cJSON *father, char *keys[], uint8_t layer, char *value) {
     const char *TAG = "getJsonObject";
-
     if (!father || !keys || layer == 0) {
         ESP_LOGE(TAG, "invalid parameters");
         return NULL;
     }
 
-    // 当前层对象
     cJSON *child = cJSON_GetObjectItem(father, keys[0]);
-    // 不存在，创建空对象
-    if (child == NULL) {
-        child = cJSON_CreateObject();
-        if (!child) {
-            ESP_LOGE(TAG, "failed to create json object");
-            return NULL;
+    if (value == NULL) {
+        // 查询模式
+        if (child == NULL || layer == 1) return child;
+        else return getJsonObject(child, keys + 1, layer - 1, value);
+    } 
+    else {
+        // 写入模式
+        if (layer == 1) {
+            cJSON *new_item = cJSON_CreateString(value);
+            if (new_item == NULL) {
+                ESP_LOGE(TAG, "failed to create json string for key: %s", keys[0]);
+                return NULL;
+            }
+            cJSON_ReplaceItemInObject(father, keys[0], new_item);
+            return new_item;
+        } 
+        else {
+            if (child == NULL) {
+                child = cJSON_CreateObject();
+                if (child == NULL) {
+                    ESP_LOGE(TAG, "failed to create object for key: %s", keys[0]);
+                    return NULL;
+                }
+                cJSON_AddItemToObject(father, keys[0], child);
+            }
+            return getJsonObject(child, keys + 1, layer - 1, value);
         }
-        cJSON_AddItemToObject(father, keys[0], child);
-        ESP_LOGI(TAG, "created empty json object for key: %s", keys[0]);
     }
-
-    if (layer == 1) {
-        // 按需修改元素
-        if (value != NULL) {
-            cJSON_ReplaceItemInObject(father, keys[0], cJSON_CreateString(value));
-            child = cJSON_GetObjectItem(father, keys[0]);
-            ESP_LOGI(TAG, "set string value for key: %s to \"%s\"", keys[0], value);
-        }
-        return child;
-    }
-    else return getJsonObject(child, keys + 1, layer - 1, value);
 }
 
 /// @brief files_core 任务函数
@@ -147,21 +148,25 @@ void filesCoreTask(void* param) {
         if (xQueueReceive(hfiles->req_queue, &req_msg, portMAX_DELAY) == pdTRUE) {
             // 读取对应的 json 文件
             cJSON *root = NULL;
-            writeJsonRoot(req_msg.path, root);
+            readJsonRoot(req_msg.path, &root);
+            if (root == NULL) {
+                ESP_LOGE(TAG, "Failed to parse JSON from %s", req_msg.path);
+                continue;
+            }
 
             // 处理不同的操作
             if (req_msg.mode == FILES_MODE_READ) {
-                // 读取
-
-                // 回复
-
+                cJSON *obj = getJsonObject(root, (char**)req_msg.keys, req_msg.key_layer, NULL);
+                strcpy(resp_msg.value, (obj == NULL) ? "" : obj->valuestring);
+                resp_msg.resualt = (obj != NULL);
+                xQueueSend(req_msg.resp_queue, &resp_msg, WAIT_TIME_NORMAL);
             }
             else if (req_msg.mode == FILES_MODE_WRITE) {
-                // 修改
-
-                // 保存
-
+                getJsonObject(root, (char**)req_msg.keys, req_msg.key_layer, req_msg.value);
+                writeJsonRoot(req_msg.path, root);
             }
+
+            cJSON_Delete(root);
         }
     }
 }
@@ -176,9 +181,12 @@ void createFilesTask(void)
 }
 
 /// @brief 发送文件操作消息
-/// @param msg 指向 FilesMsg 结构体的指针，包含文件操作的详细信息
-/// @return pdTRUE 发送成功，pdFALSE 超时或失败
+/// @param msg 要发送的文件操作消息，如果是查询结束后也会返回数据
+/// @return 
 BaseType_t sendFileMsg(FilesMsg *msg) {
-    if (msg == NULL) return pdFALSE;
-    return xQueueSend(hfiles.req_queue, msg, pdMS_TO_TICKS(1000));
+    const char *TAG = "sendFileMsg";
+    if (msg == NULL || msg->resp_queue == NULL) return pdFALSE;
+    if (xQueueSend(hfiles.req_queue, msg, WAIT_TIME_NORMAL) != pdTRUE) return pdFALSE;
+    if (msg->mode == FILES_MODE_READ) return xQueueReceive(msg->resp_queue, msg, WAIT_TIME_NORMAL);
+    else return pdTRUE;
 }

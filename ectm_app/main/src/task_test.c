@@ -1,4 +1,6 @@
 #include "task_test.h"
+#include "task_files.h"
+#include "string.h"
 
 TestHandle htest1;
 TestHandle htest2;
@@ -13,7 +15,7 @@ void test1CoreTask(void *param)
     // TestHandle *htest = (TestHandle *)param;
 
     while (1) {
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        vTaskDelay(pdMS_TO_TICKS(10000));
         char task_list[512]; 
         vTaskList(task_list);
         ESP_LOGI(TAG, "\nTask Name\tStatus\tPrio\tStack\t#Core\tNum\n%s", task_list);

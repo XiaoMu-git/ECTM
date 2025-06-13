@@ -22,4 +22,10 @@
 #define QUEUE_LENGTH_MEDIUM     ((uint8_t)8)
 #define QUEUE_LENGTH_LARGE      ((uint8_t)16)
 
+// 等待时间等级（单位：毫秒）
+#define WAIT_TIME_FAST          ((TickType_t)pdMS_TO_TICKS(100))
+#define WAIT_TIME_NORMAL        ((TickType_t)pdMS_TO_TICKS(1000))
+#define WAIT_TIME_SLOW          ((TickType_t)pdMS_TO_TICKS(10000))
+
+
 #endif // !_TASK_CONFIG_H_
