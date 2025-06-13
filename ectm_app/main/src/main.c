@@ -1,6 +1,9 @@
 #include "esp_log.h"
 #include "esp_spiffs.h"
 #include "esp_vfs.h"
+#include "esp_wifi.h"
+#include "esp_event.h"
+#include "nvs_flash.h"
 #include <sys/stat.h>
 #include <dirent.h>
 
@@ -26,96 +29,70 @@ void app_main(void)
     initBluetoothPeriph();
 
     /*---------- 创建任务 ----------*/
-    vTaskSuspendAll();  // 暂停任务调度
+    vTaskSuspendAll();      // 暂停任务调度
     createTestTask();
     createFilesTask();
     createConsoleTask();
     createUartTask();
     createBluetoothTask();
     createWifiTask();
-    xTaskResumeAll();   // 恢复任务调度
+    xTaskResumeAll();       // 恢复任务调度
 }
 
-/// @brief 初始化SPIFFS外设
+/// @brief 初始化SPIFFS外设（使用 ESP_ERROR_CHECK）
 void initSpifsPeriph(void)
 {
     const char *TAG = "spiffs";
     ESP_LOGI(TAG, "start initialization");
-    
-    // 挂载文件系统
+
+    // 配置 SPIFFS 注册文件系统
     esp_vfs_spiffs_conf_t conf = {
-        .base_path = "/spiffs",         // 挂载路径
-        .partition_label = NULL,        // 默认分区标签
-        .max_files = 5,                 // 最多同时打开文件数
-        .format_if_mount_failed = true  // 如果挂载失败则格式化
+        .base_path = "/spiffs",
+        .partition_label = NULL,
+        .max_files = 5,
+        .format_if_mount_failed = true
     };
-    esp_err_t ret = esp_vfs_spiffs_register(&conf);
-    
-    // 检查挂载结果
-    if (ret != ESP_OK) {
-        if (ret == ESP_FAIL) ESP_LOGE(TAG, "failed to mount or format filesystem");
-        else if (ret == ESP_ERR_NOT_FOUND) ESP_LOGE(TAG, "failed to find spiffs partition");
-        else ESP_LOGE(TAG, "spiffs register failed (%s)", esp_err_to_name(ret));
-        return;
-    }
+    ESP_ERROR_CHECK(esp_vfs_spiffs_register(&conf));
 
     // 获取分区信息
     size_t total = 0, used = 0;
-    ret = esp_spiffs_info(NULL, &total, &used);
-    if (ret != ESP_OK) ESP_LOGE(TAG, "failed to get spiffs info (%s)", esp_err_to_name(ret));
-    else ESP_LOGI(TAG, "spiffs mounted: total=%d bytes, used=%d bytes", total, used);
+    ESP_ERROR_CHECK(esp_spiffs_info(NULL, &total, &used));
+    ESP_LOGI(TAG, "spiffs mounted: total=%d bytes, used=%d bytes", total, used);
 
-    // 检索所有文件
+    // 遍历文件列表
     ESP_LOGI(TAG, "listing files in /spiffs:");
     DIR *dir = opendir("/spiffs");
     if (dir) {
         struct dirent *entry;
-        while ((entry = readdir(dir)) != NULL) ESP_LOGI(TAG, "  File: %s", entry->d_name);
+        while ((entry = readdir(dir)) != NULL) {
+            ESP_LOGI(TAG, "file: %s", entry->d_name);
+        }
         closedir(dir);
     } 
-    else ESP_LOGE(TAG, "failed to open \"/spiffs\" directory");
+    else ESP_LOGE(TAG, "failed to open /spiffs directory");
 
-    // 检查 setting.json 和 data.json 是否存在
+    // 定义默认文件路径
+    const char *default_files[] = {
+        "/spiffs/test.json",
+        "/spiffs/config.json",
+        "/spiffs/data.json"
+    };
+
+    // 检查大小并且不存在就会创建
     struct stat st;
-    char path[32];
-
-    strcpy(path, "/spiffs/setting.json");
-    if (stat(path, &st) == 0) ESP_LOGI(TAG, "found %s (size: %ld bytes)", path, st.st_size);
-    else {
-        ESP_LOGI(TAG, "%s not found, create new file", path);
-        FILE *fp = fopen(path, "w");
-        if (fp == NULL) {
-            ESP_LOGE(TAG, "failed to create file: %s", path);
-            return;
+    for (int i = 0; i < sizeof(default_files) / sizeof(default_files[0]); i++) {
+        const char *path = default_files[i];
+        if (stat(path, &st) == 0) ESP_LOGI(TAG, "found %s (size: %ld bytes)", path, st.st_size);
+        else {
+            ESP_LOGW(TAG, "%s not found, creating new file", path);
+            FILE *fp = fopen(path, "w");
+            if (fp == NULL) {
+                ESP_LOGE(TAG, "failed to create file: %s", path);
+                continue;
+            }
+            fclose(fp);
+            ESP_LOGI(TAG, "Created default file: %s", path);
         }
-        fclose(fp);
-        ESP_LOGI(TAG, "Created default file: %s", path);
-    }
-
-    strcpy(path, "/spiffs/data.json");
-    if (stat(path, &st) == 0) ESP_LOGI(TAG, "found %s (size: %ld bytes)", path, st.st_size);
-    else {
-        ESP_LOGI(TAG, "%s not found, create new file", path);
-        FILE *fp = fopen(path, "w");
-        if (fp == NULL) {
-            ESP_LOGE(TAG, "failed to create file: %s", path);
-            return;
-        }
-        fclose(fp);
-        ESP_LOGI(TAG, "Created default file: %s", path);
-    }
-
-    strcpy(path, "/spiffs/test.json");
-    if (stat(path, &st) == 0) ESP_LOGI(TAG, "found %s (size: %ld bytes)", path, st.st_size);
-    else {
-        ESP_LOGI(TAG, "%s not found, create new file", path);
-        FILE *fp = fopen(path, "w");
-        if (fp == NULL) {
-            ESP_LOGE(TAG, "failed to create file: %s", path);
-            return;
-        }
-        fclose(fp);
-        ESP_LOGI(TAG, "Created default file: %s", path);
     }
 
     ESP_LOGI(TAG, "initialization complete");
@@ -124,13 +101,41 @@ void initSpifsPeriph(void)
 /// @brief 初始化UART外设
 void initUartPeriph(void)
 {
-    
+
 }
 
 /// @brief 初始化WiFi外设
 void initWifiPeriph(void)
 {
-    
+    const char *TAG = "initWifiPeriph";
+    ESP_LOGI(TAG, "start initialization");
+
+    // 初始化 NVS（WiFi 驱动依赖它）
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_LOGW(TAG, "nvs init failed, erasing...");
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
+    // 初始化 TCP/IP 栈
+    ESP_ERROR_CHECK(esp_netif_init());
+
+    // 创建默认事件循环
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    // 创建默认的 WiFi STA 接口
+    esp_netif_create_default_wifi_sta();
+
+    // 初始化 WiFi 驱动
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
+    // 设置 WiFi 模式为 STA（station 模式）
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+
+    ESP_LOGI(TAG, "initialization complete");
 }
 
 /// @brief 初始化蓝牙外设

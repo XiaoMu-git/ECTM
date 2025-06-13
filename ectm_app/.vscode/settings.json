@@ -65,6 +65,8 @@
     "variant": "c",
     "stat.h": "c",
     "esp_vfs.h": "c",
-    "cstdlib": "c"
+    "cstdlib": "c",
+    "freertos.h": "c",
+    "sstream": "c"
 }
 }

@@ -14,7 +14,7 @@ void test1CoreTask(void *param)
     const char *TAG = pcTaskGetName(NULL);
     // TestHandle *htest = (TestHandle *)param;
 
-    while (1) {
+    while (true) {
         vTaskDelay(pdMS_TO_TICKS(10000));
         char task_list[512]; 
         vTaskList(task_list);
@@ -30,8 +30,16 @@ void test2CoreTask(void *param)
 {
     const char *TAG = pcTaskGetName(NULL);
     // TestHandle *htest = (TestHandle *)param;
+    
+    bool is_write = filesWriteParam("/spiffs/test.json", "a\\b\\c", "test");
+    if (!is_write) ESP_LOGI(TAG, "filesWriteParam failed");
 
-    while (1) {
+    char value[128];
+    bool is_read = filesReadParam("/spiffs/test.json", "a\\b\\c", value);
+    if (!is_read) ESP_LOGI(TAG, "filesReadParam failed");
+    else ESP_LOGI(TAG, "read param %s", value);
+
+    while (true) {
         ESP_LOGI(TAG, "running...");
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
@@ -44,7 +52,7 @@ void test3CoreTask(void *param)
     const char *TAG = pcTaskGetName(NULL);
     // TestHandle *htest = (TestHandle *)param;
 
-    while (1) {
+    while (true) {
         ESP_LOGI(TAG, "running...");
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
@@ -57,7 +65,7 @@ void test4CoreTask(void *param)
     const char *TAG = pcTaskGetName(NULL);
     // TestHandle *htest = (TestHandle *)param;
     
-    while (1) {
+    while (true) {
         ESP_LOGI(TAG, "running...");
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
@@ -68,8 +76,8 @@ void createTestTask(void)
 {
     htest1.htask = NULL;
     xTaskCreatePinnedToCore(test1CoreTask, "test1_core", TASK_STACK_SMALL, &htest1, TASK_PRIO_LOW, &htest1.htask, APP_CPU_NUM);
-    // htest2.htask = NULL;
-    // xTaskCreatePinnedToCore(test2CoreTask, "test2_core", TASK_STACK_SMALL, &htest2, TASK_PRIO_LOW, &htest2.htask, APP_CPU_NUM);
+    htest2.htask = NULL;
+    xTaskCreatePinnedToCore(test2CoreTask, "test2_core", TASK_STACK_SMALL, &htest2, TASK_PRIO_LOW, &htest2.htask, APP_CPU_NUM);
     // htest3.htask = NULL;
     // xTaskCreatePinnedToCore(test3CoreTask, "test3_core", TASK_STACK_SMALL, &htest3, TASK_PRIO_LOW, &htest3.htask, APP_CPU_NUM);
     // htest4.htask = NULL;
