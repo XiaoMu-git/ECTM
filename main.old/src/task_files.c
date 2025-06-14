@@ -42,17 +42,14 @@ bool readJsonRoot(const char *path, cJSON **root)
     fclose(f);
 
     // 空文件读取
-    if (read_len > 0) {
-        // 解析为 json 格式
-        *root = cJSON_Parse(data);
-        free(data);
-        if (*root == NULL) {
-            ESP_LOGE(TAG, "failed to parse json");
-            return false;
-        }
-    }
+    if (read_len > 0) *root = cJSON_Parse(data);
     else *root = cJSON_CreateObject();
-
+    free(data);
+    if (*root == NULL) {
+        ESP_LOGE(TAG, "failed to parse json");
+        return false;
+    }
+    
     return true;
 }
 
@@ -92,56 +89,60 @@ bool writeJsonRoot(const char *path, cJSON *root)
 }
 
 /// @brief 递归获取或创建多层嵌套的 JSON 对象，最深层可设置字符串值
-/// @param father    父对象（必须是 cJSON 对象）
+/// @param father    根节点对象
 /// @param keys      json 层级路径
 /// @param value     不为 NULL 时设置最深层 key 的字符串值，NULL 时不修改，只返回对象
 /// @return          返回最深层 cJSON 对象（或字符串节点），失败返回 NULL
-cJSON* readWriteJsonObject(cJSON *father, char *keys, char *value)
+cJSON* readWriteJsonObject(cJSON *root, char *keys, char *value)
 {
     const char *TAG = "getJsonObject";
-    if (father == NULL || keys == NULL || *keys == '\0') {
+    if (root == NULL || keys == NULL || *keys == '\0') {
         ESP_LOGE(TAG, "invalid parameters");
         return NULL;
     }
 
-    // 读取一个 key
-    char key[FILES_KEYS_SIZE] = {0};
-    uint8_t idx = 0;
-    while (keys[idx] != '\\' && keys[idx] != '\0' && idx < FILES_KEYS_SIZE) {
-        key[idx] = keys[idx];
-        idx++;
-    }
-    key[idx] = '\0';
-    bool is_end = (keys[idx] == '\0');
-    ESP_LOGI(TAG, "%s", key);
-    
-    cJSON *child = cJSON_GetObjectItem(father, key);
-    if (value == NULL) {
-        // 查询模式
-        if (child == NULL || is_end) return child;
-        else return readWriteJsonObject(child, keys + idx + 1, value);
-    } 
-    else {
-        // 写入模式
-        if (is_end) {
-            cJSON *new_item = cJSON_CreateString(value);
-            if (new_item == NULL) {
-                ESP_LOGE(TAG, "failed to create json string for key: %s", key);
-                return NULL;
+    if (strlen(keys) >= FILES_KEYS_SIZE) return NULL;
+    char key[FILES_KEYS_SIZE];
+    strcpy(key, keys);
+    char* ptr = key;
+    for (int i = 0;; i++) {
+        if (key[i] == '/') {
+            // 找到一个分界点
+            key[i] = '\0';
+            cJSON *child = cJSON_GetObjectItem(root, ptr);
+            if (value == NULL) {
+                // 查询模式
+                if (child == NULL) return NULL;
             }
-            cJSON_ReplaceItemInObject(father, key, new_item);
-            return new_item;
-        } 
-        else {
-            if (child == NULL) {
-                child = cJSON_CreateObject();
+            else {
+                // 修改模式
                 if (child == NULL) {
-                    ESP_LOGE(TAG, "failed to create object for key: %s", key);
+                    child = cJSON_CreateObject();
+                    if (child == NULL) {
+                        ESP_LOGE(TAG, "failed to create object for key: %s", key);
+                        return NULL;
+                    }
+                    cJSON_AddItemToObject(root, ptr, child);
+                }
+            }
+            
+            root = child;
+            ptr = key + i + 1;
+        }
+        else if (key[i] == '\0') {
+            // 找到最后一个 key
+            cJSON *child = cJSON_GetObjectItem(root, ptr);
+            if (value == NULL) return child;
+            else {
+                cJSON *new_item = cJSON_CreateString(value);
+                if (new_item == NULL) {
+                    ESP_LOGE(TAG, "failed to create json string for key: %s", ptr);
                     return NULL;
                 }
-                cJSON_AddItemToObject(father, key, child);
+                if (child == NULL) cJSON_AddItemToObject(root, ptr, new_item);
+                else cJSON_ReplaceItemInObject(root, ptr, new_item);
+                return new_item;
             }
-            return readWriteJsonObject(father, keys + idx + 1, value);
         }
     }
 }
@@ -158,15 +159,10 @@ void filesCoreTask(void *param) {
             // 读取对应的 json 文件
             cJSON *root = NULL;
             readJsonRoot(req_msg.path, &root);
-            ESP_LOGI(TAG, "%s", cJSON_Print(root));
-            if (root == NULL) {
-                ESP_LOGE(TAG, "Failed to parse JSON from %s", req_msg.path);
-                continue;
-            }
 
             // 处理不同的操作
             if (req_msg.mode == FILES_MODE_READ) {
-                cJSON *obj = readWriteJsonObject(root, req_msg.keys, NULL);
+                cJSON *obj = (root == NULL) ? NULL : readWriteJsonObject(root, req_msg.keys, NULL);
                 strcpy(resp_msg.value, (obj == NULL) ? "" : obj->valuestring);
                 resp_msg.resualt = (obj != NULL);
                 xQueueSend(req_msg.resp_queue, &resp_msg, WAIT_TIME_MEDIUM);
@@ -198,7 +194,6 @@ void createFilesTask(void)
 /// @return 如果读取成功返回 true，否则返回 false
 bool filesReadParam(char *path, char *keys, char *value)
 {
-    const char *TAG = "filesReadParam";
     FilesMsg req_msg = {0};
     strcpy(req_msg.path, path);
     strcpy(req_msg.keys, keys);
@@ -223,7 +218,6 @@ bool filesReadParam(char *path, char *keys, char *value)
 /// @return 如果写入成功返回 true，否则返回 false
 bool filesWriteParam(char *path, char *keys, char *value)
 {
-    const char *TAG = "filesWriteParam";
     FilesMsg req_msg = {0};
     strcpy(req_msg.path, path);
     strcpy(req_msg.keys, keys);

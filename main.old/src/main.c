@@ -1,9 +1,14 @@
 #include "esp_log.h"
 #include "esp_spiffs.h"
 #include "esp_vfs.h"
+#include "esp_wifi.h"
+#include "esp_event.h"
+#include "nvs_flash.h"
+#include <sys/stat.h>
+#include <dirent.h>
 
 #include "task_test.h"
-#include "task_file.h"
+#include "task_files.h"
 #include "task_console.h"
 #include "task_uart.h"
 #include "task_bluetooth.h"
@@ -26,7 +31,7 @@ void app_main(void)
     /*---------- 创建任务 ----------*/
     vTaskSuspendAll();      // 暂停任务调度
     createTestTask();
-    createFileTask();
+    createFilesTask();
     createConsoleTask();
     createUartTask();
     createBluetoothTask();
@@ -102,7 +107,35 @@ void initUartPeriph(void)
 /// @brief 初始化WiFi外设
 void initWifiPeriph(void)
 {
+    const char *TAG = "initWifiPeriph";
+    ESP_LOGI(TAG, "start initialization");
 
+    // 初始化 NVS（WiFi 驱动依赖它）
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_LOGW(TAG, "nvs init failed, erasing...");
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
+    // 初始化 TCP/IP 栈
+    ESP_ERROR_CHECK(esp_netif_init());
+
+    // 创建默认事件循环
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    // 创建默认的 WiFi STA 接口
+    esp_netif_create_default_wifi_sta();
+
+    // 初始化 WiFi 驱动
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
+    // 设置 WiFi 模式为 STA（station 模式）
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+
+    ESP_LOGI(TAG, "initialization complete");
 }
 
 /// @brief 初始化蓝牙外设

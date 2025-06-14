@@ -1,9 +1,11 @@
 #ifndef _TASK_CONFIG_H_
 #define _TASK_CONFIG_H_
 
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
+#include "cJSON.h"
 
 // 栈大小等级（单位：字节）
 #define TASK_STACK_TINY         ((uint16_t)2048)
