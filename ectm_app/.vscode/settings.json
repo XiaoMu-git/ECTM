@@ -5,7 +5,7 @@
   "idf.openOcdConfigs": [
     "board/esp32-wrover-kit-3.3v.cfg"
   ],
-  "idf.portWin": "COM6",
+  "idf.portWin": "COM5",
   "idf.toolsPathWin": "D:\\Software\\esp-idf\\.espressif",
   "idf.customExtraVars": {
     "IDF_TARGET": "esp32"
@@ -69,6 +69,7 @@
     "freertos.h": "c",
     "sstream": "c",
     "utility": "c",
-    "string.h": "c"
+    "string.h": "c",
+    "cjson.h": "c"
 }
 }

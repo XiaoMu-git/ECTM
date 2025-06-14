@@ -7,7 +7,7 @@ FileHandle hfile;
 /// @param root 
 /// @return 
 bool readJsonRoot(const char *path, cJSON **root) {
-    const char *TAG = "readJsonRoot";
+    // const char *TAG = "readJsonRoot";
     if (path == NULL || root == NULL) return false;
 
     // 打开 JSON 文件（只读模式）
@@ -47,7 +47,7 @@ bool readJsonRoot(const char *path, cJSON **root) {
 /// @param root 
 /// @return 
 bool writeJsonRoot(const char *path, cJSON **root) {
-    const char *TAG = "writeJsonRoot";
+    // const char *TAG = "writeJsonRoot";
     if (path == NULL|| *root == NULL) return false;
 
     // 将 cJSON 对象转为字符串
@@ -73,7 +73,7 @@ bool writeJsonRoot(const char *path, cJSON **root) {
 /// @param value 要设置的值；如果为 NULL，则为读取模式
 /// @return 返回目标节点指针（读取或新建）
 cJSON* readWriteJsonObject(cJSON *root, char *keys, char *value) {
-    const char *TAG = "readWriteJsonObject";
+    // const char *TAG = "readWriteJsonObject";
     if (root == NULL || keys == NULL || *keys == '\0') return NULL;
 
     // 拷贝键路径到缓冲区并初始化指针
@@ -161,7 +161,7 @@ void fileCoreTask(void *param) {
                 if (req_msg.mode == FILE_MODE_READ) obj = readWriteJsonObject(root, req_msg.keys, NULL);
                 else if (req_msg.mode == FILE_MODE_WRITE) {
                     obj = readWriteJsonObject(root, req_msg.keys, req_msg.value);
-                    writeJsonRoot(req_msg.path, root);
+                    writeJsonRoot(req_msg.path, &root);
                 }
             }
 
@@ -174,7 +174,7 @@ void fileCoreTask(void *param) {
                 strcpy(resp_msg.value, "None");
                 resp_msg.resualt = false;
             }
-            cJSON_Delete(root);
+            if (root != NULL) cJSON_Delete(root);
 
             // 将响应消息发送回响应队列
             if (req_msg.resp_queue != NULL) xQueueSend(req_msg.resp_queue, &resp_msg, WAIT_TIME_MEDIUM);
@@ -198,7 +198,7 @@ void createFileTask(void)
 /// @param mode FILE_MODE_READ / FILE_MODE_WRITE
 /// @return true: 操作成功，false: 操作失败
 bool fileControl(char *path, char *keys, char *value, uint8_t mode) {
-    const char* TAG = "fileControl";
+    // const char* TAG = "fileControl";
     if (path == NULL || keys == NULL) return false;
 
     FileMsg req_msg = {0}, resp_msg = {0};

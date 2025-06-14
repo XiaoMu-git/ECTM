@@ -27,5 +27,4 @@
 #define WAIT_TIME_MEDIUM        ((TickType_t)pdMS_TO_TICKS(500))
 #define WAIT_TIME_LONG          ((TickType_t)pdMS_TO_TICKS(2500))
 
-
 #endif // !_TASK_CONFIG_H_

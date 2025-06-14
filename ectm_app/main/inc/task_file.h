@@ -5,6 +5,13 @@
 #include <string.h>
 #include "cJSON.h"
 
+#define fileReadTest(keys, value) fileControl("/spiffs/test.json", keys, value, FILE_MODE_READ)
+#define fileWriteTest(keys, value) fileControl("/spiffs/test.json", keys, value, FILE_MODE_WRITE)
+#define fileReadConfig(keys, value) fileControl("/spiffs/config.json", keys, value, FILE_MODE_READ)
+#define fileWriteConfig(keys, value) fileControl("/spiffs/config.json", keys, value, FILE_MODE_WRITE)
+#define fileReadData(keys, value) fileControl("/spiffs/data.json", keys, value, FILE_MODE_READ)
+#define fileWriteData(keys, value) fileControl("/spiffs/data.json", keys, value, FILE_MODE_WRITE)
+
 #define FILE_PATH_SIZE     32           // 文件路径最大长度
 #define FILE_KEYS_SIZE     64           // 最多支持 4 层嵌套 JSON 键
 #define FILE_VALUE_SIZE    32           // 值最大长度
