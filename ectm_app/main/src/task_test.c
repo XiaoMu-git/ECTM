@@ -13,21 +13,13 @@ void test1CoreTask(void *param)
 {
     const char *TAG = pcTaskGetName(NULL);
     // TestHandle *htest = (TestHandle *)param;
-    char task_list[512]; 
+    char task_list[512];
     
     while (true) {
-        ESP_LOGI(TAG, "Free heap size: %u bytes", xPortGetFreeHeapSize());
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        ESP_LOGI(TAG, "Free heap size: %u bytes", xPortGetFreeHeapSize());
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        ESP_LOGI(TAG, "Free heap size: %u bytes", xPortGetFreeHeapSize());
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        ESP_LOGI(TAG, "Free heap size: %u bytes", xPortGetFreeHeapSize());
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        ESP_LOGI(TAG, "Free heap size: %u bytes", xPortGetFreeHeapSize());
-        vTaskDelay(pdMS_TO_TICKS(1000));
         vTaskList(task_list);
         ESP_LOGI(TAG, "\nTask Name\tStatus\tPrio\tStack\t#Core\tNum\n%s", task_list);
+        ESP_LOGI(TAG, "Free heap size: %u bytes", xPortGetFreeHeapSize());
+        vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }
 
@@ -38,15 +30,9 @@ void test2CoreTask(void *param)
     const char *TAG = pcTaskGetName(NULL);
     // TestHandle *htest = (TestHandle *)param;
 
-    char write_data[32] = "test_ssid";
-    char read_data[32] = {0};
-
     while (true) {
-        if (fileWriteTest("config/wifi/ssid", write_data))
-            ESP_LOGI(TAG, "write_data = %s", write_data);
-        if (fileReadTest("config/wifi/ssid", read_data))
-            ESP_LOGI(TAG, "read_data = %s", read_data);
-        vTaskDelay(pdMS_TO_TICKS(100));
+        ESP_LOGI(TAG, "running...");
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 

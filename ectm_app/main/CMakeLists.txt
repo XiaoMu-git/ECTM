@@ -6,6 +6,7 @@ idf_component_register(
     REQUIRES	spiffs 
 				vfs 
 				json
+				driver
 				esp_wifi
 				esp_event
 				esp_netif

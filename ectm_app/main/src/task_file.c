@@ -1,4 +1,6 @@
 #include "task_file.h"
+#include "esp_spiffs.h"
+#include "esp_vfs.h"
 
 FileHandle hfile;
 
@@ -148,11 +150,11 @@ cJSON* readWriteJsonObject(cJSON *root, char *keys, char *value) {
 /// @param param 
 void fileCoreTask(void *param) {
     const char *TAG = pcTaskGetName(NULL);
-    FileHandle* hfile = (FileHandle*)param;
+    FileHandle *hfile = (FileHandle*)param;
     FileMsg req_msg, resp_msg;
 
     while (true) {
-        if  (xQueueReceive(hfile->req_queue, &req_msg, portMAX_DELAY) == pdTRUE) {
+        if (xQueueReceive(hfile->req_queue, &req_msg, portMAX_DELAY) == pdTRUE) {
             cJSON *root = NULL;
             cJSON *obj = NULL;
             // 从文件中读取 JSON 根对象
