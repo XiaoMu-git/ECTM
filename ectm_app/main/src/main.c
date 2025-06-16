@@ -1,5 +1,6 @@
 #include "xm_config.h"
 #include "xm_file.h"
+#include "task_test.h"
 
 void app_main(void) {
     /*---------- 初始化外设 ----------*/
@@ -8,7 +9,7 @@ void app_main(void) {
 
 
     /*---------- 创 建任 务 ----------*/
-
+    createTestTask();
 
 
     

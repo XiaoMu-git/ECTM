@@ -6,8 +6,6 @@
 /// @param  
 void initSpiffs(void) {
     const char *TAG = "initSpiffs";
-    ESP_LOGI(TAG, "start initialization");
-
     const char *files[] = {
         "/spiffs/test.json",
         "/spiffs/bluetooth.json",
@@ -16,6 +14,7 @@ void initSpiffs(void) {
         "/spiffs/wifi.json"
     };
 
+    ESP_LOGI(TAG, "start initialization");
     // 配置 SPIFFS 注册文件系统
     esp_vfs_spiffs_conf_t conf = {
         .base_path = "/spiffs",
@@ -43,7 +42,7 @@ void initSpiffs(void) {
                 continue;
             }
             ESP_ERROR_CHECK(fclose(fp));
-            ESP_LOGI(TAG, "Created default file: %s", path);
+            ESP_LOGI(TAG, "created default file: %s", path);
         }
     }
 
@@ -53,9 +52,9 @@ void initSpiffs(void) {
 /// @brief 从文件中读取指定长度的数据
 /// @param path 要读取的文件路径，例如 "/spiffs/config.json"
 /// @param buff 接收读取数据的缓冲区指针（必须预先分配好）
-/// @param length 最多读取的数据长度（不含 '\0'）
+/// @param length 最多读取的数据长度（含 '\0'）
 /// @return 实际读取的字节数，若打开文件失败返回 0
-uint32_t readFile(const char *path, char *buff, uint32_t length) {
+size_t readFile(const char *path, char *buff, uint32_t length) {
     if (path == NULL || buff == NULL) return 0;
 
     // 打开文件
@@ -63,7 +62,7 @@ uint32_t readFile(const char *path, char *buff, uint32_t length) {
     if (f == NULL) return 0;
 
     // 读取数据
-    uint32_t read_length = fread(buff, 1, length, f);
+    uint32_t read_length = fread(buff, 1, length - 1, f);
     fclose(f);
     buff[read_length] = '\0';
 
@@ -75,8 +74,8 @@ uint32_t readFile(const char *path, char *buff, uint32_t length) {
 /// @param buff 要写入的数据缓冲区指针
 /// @param length 要写入的数据长度（字节数）
 /// @return 实际写入的字节数，若打开文件失败返回 0
-uint32_t writeFile(const char *path, char *buff, uint32_t length) {
-    if (path == NULL || buff == NULL) return false;
+size_t writeFile(const char *path, char *buff, uint32_t length) {
+    if (path == NULL || buff == NULL) return 0;
 
     // 打开文件
     FILE *f = fopen(path, "w");
