@@ -72,6 +72,17 @@
     "string.h": "c",
     "cjson.h": "c",
     "xm_config.h": "c",
-    "xm_file.h": "c"
+    "xm_file.h": "c",
+    "nvs_flash.h": "c",
+    "esp_netif.h": "c",
+    "xm_uart.h": "c",
+    "xm_bluetooth.h": "c",
+    "xm_gpio.h": "c",
+    "task_gpio.h": "c",
+    "task_uart.h": "c",
+    "xm_wifi.h": "c",
+    "queue.h": "c",
+    "semphr.h": "c",
+    "task_file.h": "c"
 }
 }
